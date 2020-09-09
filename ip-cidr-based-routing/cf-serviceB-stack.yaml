@@ -1,0 +1,135 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+  ServiceBImage:
+    Type: String
+    Description: Service B container image
+  ServiceBContainerPort:
+    Type: Number
+    Description: Port number to use for Service B
+  Priority:
+    Type: Number
+    Description: ALB Rule priority
+    Default: 2
+  TargetGroupName:
+    Type: String
+    Description: ALB TargetgroupName
+    Default: serviceB-tg
+  HTTPHeaderValue:
+    Type: String
+    Description: HTTP Header Value
+    Default: Service-B-User-Agent
+  TaskDefFamilyName:
+    Type: String
+    Description: Task Definition Family Name
+    Default: serviceB-family
+  ServiceName:
+    Type: String
+    Description: Service Name
+    Default: svc-B
+  ContainerName:
+    Type: String
+    Description: Container Name
+    Default: serviceB
+Resources:
+  ServiceBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: '/service/healthcheck'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Name: !Ref TargetGroupName
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 120
+      VpcId:
+        Fn::ImportValue:
+          !Sub '${ProjectName}:VPC'
+  ServiceBALBRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - TargetGroupArn: !Ref ServiceBTargetGroup
+        Type: 'forward'
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - '/service/*'
+      - Field: source-ip
+        SourceIpConfig:
+          Values:
+          - "54.240.193.129/32"
+      ListenerArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:PublicLoadBalancerListener'
+      Priority: !Ref Priority
+  ServiceBTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+      - 'FARGATE'
+      TaskRoleArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:TaskIamRole'
+      NetworkMode: 'awsvpc'
+      Family: !Ref TaskDefFamilyName
+      ExecutionRoleArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:TaskExecutionIamRole'
+      Cpu: 1024
+      Memory: 2048
+      ContainerDefinitions:
+      - Name: !Ref ContainerName
+        Image: !Ref ServiceBImage
+        Essential: true
+        PortMappings:
+        - ContainerPort: !Ref ServiceBContainerPort
+          Protocol: 'tcp'
+        LogConfiguration:
+          LogDriver: 'awslogs'
+          Options:
+            awslogs-group: !Sub '${ProjectName}-log-group'
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: !Ref ContainerName
+  ServiceBECSService:
+    Type: AWS::ECS::Service
+    DependsOn:
+    - ServiceBALBRule
+    Properties:
+      TaskDefinition: !Ref ServiceBTaskDef
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      Cluster: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:ECSCluster'
+      ServiceName: !Ref ServiceName
+      SchedulingStrategy: REPLICA
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DeploymentController:
+        Type: ECS  #Rolling update      
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:TaskSecurityGroup'
+          Subnets:
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PrivateSubnet1'
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PrivateSubnet2'
+      HealthCheckGracePeriodSeconds: 150
+      LoadBalancers:
+      - ContainerName: !Ref ContainerName
+        ContainerPort: !Ref ServiceBContainerPort
+        TargetGroupArn: !Ref ServiceBTargetGroup

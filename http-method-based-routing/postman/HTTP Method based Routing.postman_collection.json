@@ -1,0 +1,54 @@
+{
+	"info": {
+		"_postman_id": "42c10458-71d3-49aa-9caf-107188a78456",
+		"name": "HTTP Method based Routing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Post Request",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "alb-u-Publi-KXT8ZN6IVSD-233031660.ap-southeast-2.elb.amazonaws.com/service/democall",
+					"host": [
+						"alb-u-Publi-KXT8ZN6IVSD-233031660",
+						"ap-southeast-2",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"service",
+						"democall"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "alb-u-Publi-KXT8ZN6IVSD-233031660.ap-southeast-2.elb.amazonaws.com/service/democall",
+					"host": [
+						"alb-u-Publi-KXT8ZN6IVSD-233031660",
+						"ap-southeast-2",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"service",
+						"democall"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

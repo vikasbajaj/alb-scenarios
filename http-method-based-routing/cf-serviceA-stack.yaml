@@ -1,0 +1,135 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+  ServiceAImage:
+    Type: String
+    Description: Service A container image
+  ServiceAContainerPort:
+    Type: Number
+    Description: Port number to use for Service A
+  Priority:
+    Type: Number
+    Description: ALB Rule priority
+    Default: 1
+  TargetGroupName:
+    Type: String
+    Description: ALB TargetgroupName
+    Default: serviceA-tg
+  HTTPHeaderValue:
+    Type: String
+    Description: HTTP Header Value
+    Default: Service-A-User-Agent
+  TaskDefFamilyName:
+    Type: String
+    Description: Task Definition Family Name
+    Default: serviceA-family
+  ServiceName:
+    Type: String
+    Description: Service Name
+    Default: svc-A
+  ContainerName:
+    Type: String
+    Description: Container Name
+    Default: serviceA
+Resources:
+  ServiceATargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: '/service/healthcheck'
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      Name: !Ref TargetGroupName
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: 120
+      VpcId:
+        Fn::ImportValue:
+          !Sub '${ProjectName}:VPC'
+  ServiceAALBRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - TargetGroupArn: !Ref ServiceATargetGroup
+        Type: 'forward'
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - '/service/*'
+      - Field: http-request-method
+        HttpRequestMethodConfig:
+          Values:
+          - POST
+      ListenerArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:PublicLoadBalancerListener'
+      Priority: !Ref Priority
+  ServiceATaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      RequiresCompatibilities:
+      - 'FARGATE'
+      TaskRoleArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:TaskIamRole'
+      NetworkMode: 'awsvpc'
+      Family: !Ref TaskDefFamilyName
+      ExecutionRoleArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:TaskExecutionIamRole'
+      Cpu: 1024
+      Memory: 2048
+      ContainerDefinitions:
+      - Name: !Ref ContainerName
+        Image: !Ref ServiceAImage
+        Essential: true
+        PortMappings:
+        - ContainerPort: !Ref ServiceAContainerPort
+          Protocol: 'tcp'
+        LogConfiguration:
+          LogDriver: 'awslogs'
+          Options:
+            awslogs-group: !Sub '${ProjectName}-log-group'
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: !Ref ContainerName
+  ServiceAECSService:
+    Type: AWS::ECS::Service
+    DependsOn:
+    - ServiceAALBRule
+    Properties:
+      TaskDefinition: !Ref ServiceATaskDef
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      Cluster: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:ECSCluster'
+      ServiceName: !Ref ServiceName
+      SchedulingStrategy: REPLICA
+      DesiredCount: 1
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DeploymentController:
+        Type: ECS  #Rolling update      
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:TaskSecurityGroup'
+          Subnets:
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PrivateSubnet1'
+          - Fn::ImportValue:
+              !Sub '${ProjectName}:PrivateSubnet2'
+      HealthCheckGracePeriodSeconds: 150
+      LoadBalancers:
+      - ContainerName: !Ref ContainerName
+        ContainerPort: !Ref ServiceAContainerPort
+        TargetGroupArn: !Ref ServiceATargetGroup

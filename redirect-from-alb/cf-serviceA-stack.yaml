@@ -1,0 +1,35 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Project name to link stacks
+  Priority:
+    Type: Number
+    Description: ALB Rule priority
+    Default: 1
+  HTTPHeaderValue:
+    Type: String
+    Description: HTTP Header Value
+    Default: A
+Resources:
+  ServiceAALBRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: redirect
+        RedirectConfig:
+          Host: github.com
+          Protocol: HTTPS
+          StatusCode: HTTP_301
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - '/service/*'
+      - Field: http-header
+        HttpHeaderConfig:
+          HttpHeaderName: User-Agent
+          Values:
+          - !Ref HTTPHeaderValue
+      ListenerArn: 
+        Fn::ImportValue:
+          !Sub '${ProjectName}:PublicLoadBalancerListener'
+      Priority: !Ref Priority

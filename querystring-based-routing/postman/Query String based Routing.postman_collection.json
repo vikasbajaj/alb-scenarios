@@ -1,0 +1,65 @@
+{
+	"info": {
+		"_postman_id": "f2b47ed9-22f1-4582-9525-4e79ad39ca5e",
+		"name": "Query String based Routing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Service-A Call",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Service-B call",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"user-agent": true
+				}
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "User-Agent",
+						"value": "Service-B-User-Agent",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "alb-u-Publi-KXT8ZN6IVSD-233031660.ap-southeast-2.elb.amazonaws.com/service/democall?departmentid=20",
+					"host": [
+						"alb-u-Publi-KXT8ZN6IVSD-233031660",
+						"ap-southeast-2",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"service",
+						"democall"
+					],
+					"query": [
+						{
+							"key": "departmentid",
+							"value": "20"
+						},
+						{
+							"key": "employeeid",
+							"value": "2000",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

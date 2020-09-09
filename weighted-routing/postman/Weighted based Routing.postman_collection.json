@@ -1,0 +1,21 @@
+{
+	"info": {
+		"_postman_id": "917eab06-7bc4-4ee1-8b71-795ff8fa7a7e",
+		"name": "Weighted based Routing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "test weighted routing",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

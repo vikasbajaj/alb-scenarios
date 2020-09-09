@@ -1,0 +1,76 @@
+{
+	"info": {
+		"_postman_id": "eee6aec3-a702-4a61-b581-7851fa9dddc3",
+		"name": "HTTP Header based Routing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Service A healthcheck",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Service A Demo Call",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Service B healthcheck",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Service B Demo Call",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"user-agent": true
+				}
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "User-Agent",
+						"value": "Service-B-User-Agent",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "alb-u-Publi-KXT8ZN6IVSD-233031660.ap-southeast-2.elb.amazonaws.com/service/democall",
+					"host": [
+						"alb-u-Publi-KXT8ZN6IVSD-233031660",
+						"ap-southeast-2",
+						"elb",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"service",
+						"democall"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
